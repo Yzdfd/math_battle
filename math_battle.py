@@ -1,4 +1,5 @@
 import random
+import time
 
 # Define char and monster hp
 def chara_difficulty():
@@ -46,6 +47,7 @@ def chara_difficulty():
     
 def mechanic_game(player_hp, monster_hp, damage_range, monster_damage_range):
     while player_hp > 0 and monster_hp > 0:
+        time_limit = 20
         print("\nPlayer Hp : ", player_hp)
         print("Monster Hp : ", monster_hp)
         
@@ -56,7 +58,10 @@ def mechanic_game(player_hp, monster_hp, damage_range, monster_damage_range):
         operator = random.choice(operators)
         
         print(f"Soal {num1} {operator} {num2} ? ")
+        start_time = time.time() 
         answer = float(input("Your Answer : "))
+        end_time = time.time()
+        elapsed_time = end_time - start_time 
         if operator == '+':
             correct_answer = num1 + num2
         elif operator == '-':
@@ -68,14 +73,16 @@ def mechanic_game(player_hp, monster_hp, damage_range, monster_damage_range):
         elif operator == '^':
             correct_answer = num1 ** num2
             
-        if answer == correct_answer:
+        if answer == correct_answer and elapsed_time <= time_limit:
             damage = random.randint(damage_range[0], damage_range[1])
             monster_hp -= damage
             print(f"Correct! You deal {damage} damage to the Monster.")
+            print(f"Time taken: {elapsed_time:.2f} seconds")
         else:
             damage = random.randint(monster_damage_range[0], monster_damage_range[1])
             player_hp -= damage
             print(f"Wrong! The Monster deals {damage} damage to you.")
+            print(f"Time taken: {elapsed_time:.2f} seconds")
         
     if player_hp <= 0:
         print(f"You Lose! Monster's remaining HP is {monster_hp}")
