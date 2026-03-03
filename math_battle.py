@@ -23,6 +23,20 @@ def chara_difficulty():
         damage_range = (20, 34)
     print(f"You Choose Character {char} with Hp {player_hp} and Damage {damage_range}")
     
+    print("\nTimer")
+    print("1. 20 Seconds")
+    print("2. 15 Seconds")
+    print("3. 10 Seconds")
+    time_limit = int(input("Choose Your Time Limit : "))
+    if time_limit == 1:
+        time_limit = 20     
+    elif time_limit == 2:   
+        time_limit = 15
+    elif time_limit == 3:
+        time_limit = 10
+    print(f"You Choose Time Limit {time_limit} Seconds")
+    
+
     print("\nDifficulty")
     print("1. Easy (Hp 100, Damage 7 - 12)")
     print("2. Medium (Hp 200, Damage 10 - 15)")
@@ -43,11 +57,13 @@ def chara_difficulty():
         monster_damage_range = (25, 70)
     print(f"Monster HP : {monster_hp}, Monster Damage Range : {monster_damage_range}")
     
-    return player_hp, monster_hp, damage_range, monster_damage_range
     
-def mechanic_game(player_hp, monster_hp, damage_range, monster_damage_range):
+    return player_hp, monster_hp, damage_range, monster_damage_range, time_limit
+
+    
+def mechanic_game(player_hp, monster_hp, damage_range, monster_damage_range, time_limit):
     while player_hp > 0 and monster_hp > 0:
-        time_limit = 20
+        
         print("\nPlayer Hp : ", player_hp)
         print("Monster Hp : ", monster_hp)
         
@@ -62,6 +78,7 @@ def mechanic_game(player_hp, monster_hp, damage_range, monster_damage_range):
         answer = float(input("Your Answer : "))
         end_time = time.time()
         elapsed_time = end_time - start_time 
+        
         if operator == '+':
             correct_answer = num1 + num2
         elif operator == '-':
@@ -74,10 +91,16 @@ def mechanic_game(player_hp, monster_hp, damage_range, monster_damage_range):
             correct_answer = num1 ** num2
             
         if answer == correct_answer and elapsed_time <= time_limit:
-            damage = random.randint(damage_range[0], damage_range[1])
+            if elapsed_time <= 2:
+                damage = random.randint(damage_range[0], damage_range[1]) * 2
+                print(f"Correct! You deal CRITICAL HIT {damage} damage to the Monster.")
+                print(f"Time taken: {elapsed_time:.2f} seconds")
+            else:
+                damage = random.randint(damage_range[0], damage_range[1])
+                print(f"Correct! You deal {damage} damage to the Monster.")
+                print(f"Time taken: {elapsed_time:.2f} seconds")
             monster_hp -= damage
-            print(f"Correct! You deal {damage} damage to the Monster.")
-            print(f"Time taken: {elapsed_time:.2f} seconds")
+
         else:
             damage = random.randint(monster_damage_range[0], monster_damage_range[1])
             player_hp -= damage
@@ -88,12 +111,10 @@ def mechanic_game(player_hp, monster_hp, damage_range, monster_damage_range):
         print(f"You Lose! Monster's remaining HP is {monster_hp}")
     else:
         print(f"You Win! Your remaining HP is {player_hp}")
-    
-    
-    
+      
 def main():
-    player_hp, monster_hp, damage_range, monster_damage_range = chara_difficulty()
-    mechanic_game(player_hp, monster_hp, damage_range, monster_damage_range)
+    player_hp, monster_hp, damage_range, monster_damage_range, time_limit = chara_difficulty()
+    mechanic_game(player_hp, monster_hp, damage_range, monster_damage_range, time_limit)
 
 
 main()
