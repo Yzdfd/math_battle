@@ -8,32 +8,44 @@ def chara_difficulty():
     print("1. Tanker (Hp 200, Damage 7-12)")
     print("2. Fighter (Hp 175, Damage 10-17)")
     print("3. Assasin (Hp 75, Damage 20-34)")
-    char = int(input("Choose Your Character : "))
-    if char == 1:
-        char = "Tanker"
-        player_hp = 200
-        damage_range = (7, 12)
-    elif char == 2:
-        char = "Fighter"        
-        player_hp = 175
-        damage_range = (10, 17)
-    elif char == 3:
-        char = "Assasin"
-        player_hp = 75
-        damage_range = (20, 34)
+    while True:
+        char = int(input("Choose Your Character : "))
+        if char == 1:
+            char = "Tanker"
+            player_hp = 200
+            damage_range = (7, 12)
+            break
+        elif char == 2:
+            char = "Fighter"        
+            player_hp = 175
+            damage_range = (10, 17)
+            break
+        elif char == 3:
+            char = "Assasin"
+            player_hp = 75
+            damage_range = (20, 34)
+            break
+        else :
+            print("Invalid Character. Please choose again.")
     print(f"You Choose Character {char} with Hp {player_hp} and Damage {damage_range}")
-    
+        
     print("\nTimer")
     print("1. 20 Seconds")
     print("2. 15 Seconds")
     print("3. 10 Seconds")
-    time_limit = int(input("Choose Your Time Limit : "))
-    if time_limit == 1:
-        time_limit = 20     
-    elif time_limit == 2:   
-        time_limit = 15
-    elif time_limit == 3:
-        time_limit = 10
+    while True:
+        time_limit = int(input("Choose Your Time Limit : "))
+        if time_limit == 1:
+            time_limit = 20  
+            break   
+        elif time_limit == 2:   
+            time_limit = 15
+            break
+        elif time_limit == 3:
+            time_limit = 10
+            break
+        else:
+            print("Invalid Time Limit. Please choose again.")
     print(f"You Choose Time Limit {time_limit} Seconds")
     
 
@@ -42,21 +54,28 @@ def chara_difficulty():
     print("2. Medium (Hp 200, Damage 10 - 15)")
     print("3. Hard (Hp 250, Damage 13 - 18)")
     print("4. Extreme (Hp 450, Damage 25 - 70)")
-    difficulty = int(input("Choose Your Difficulty : "))
-    if difficulty == 1:
-        monster_hp = 100
-        monster_damage_range = (7, 12)
-    elif difficulty == 2:
-        monster_hp = 200
-        monster_damage_range = (10, 15)
-    elif difficulty == 3:
-        monster_hp = 250
-        monster_damage_range = (13, 18)
-    elif difficulty == 4:
-        monster_hp = 450
-        monster_damage_range = (25, 70)
+    while True:
+        difficulty = int(input("Choose Your Difficulty : "))
+        if difficulty == 1:
+            monster_hp = 100
+            monster_damage_range = (7, 12)
+            break
+        elif difficulty == 2:
+            monster_hp = 200
+            monster_damage_range = (10, 15)
+            break
+        elif difficulty == 3:
+            monster_hp = 250
+            monster_damage_range = (13, 18)
+            break
+        elif difficulty == 4:
+            monster_hp = 450
+            monster_damage_range = (25, 70)
+            break
+        else:   
+            print("Invalid Difficulty. Please choose again.")
     print(f"Monster HP : {monster_hp}, Monster Damage Range : {monster_damage_range}")
-    
+        
     
     return player_hp, monster_hp, damage_range, monster_damage_range, time_limit
 
@@ -67,10 +86,10 @@ def mechanic_game(player_hp, monster_hp, damage_range, monster_damage_range, tim
         print("\nPlayer Hp : ", player_hp)
         print("Monster Hp : ", monster_hp)
         
-        num1 = random.randint(1, 100)
-        num2 = random.randint(1, 100)
-        operators = ['+','-']
-        # operators = ['+','-','*','/','^']
+        num1 = random.randint(10, 20)
+        num2 = random.randint(1, 10)
+        # operators = ['+','-']
+        operators = ['+','-','*','/','^']
         operator = random.choice(operators)
         
         print(f"Soal {num1} {operator} {num2} ? ")
