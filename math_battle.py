@@ -2,6 +2,9 @@ import random
 import time
 
 # Define char and monster hp
+
+
+
 def chara_difficulty():
     print("Welcome to Math Battle!")
     print("Character")
@@ -80,7 +83,8 @@ def chara_difficulty():
     return player_hp, monster_hp, damage_range, monster_damage_range, time_limit
 
     
-def mechanic_game(player_hp, monster_hp, damage_range, monster_damage_range, time_limit):
+def mechanic_game(player_hp, monster_hp, damage_range, monster_damage_range, time_limit, combo_damage = 0):
+    combo = 0
     while player_hp > 0 and monster_hp > 0:
         
         print("\nPlayer Hp : ", player_hp)
@@ -89,7 +93,7 @@ def mechanic_game(player_hp, monster_hp, damage_range, monster_damage_range, tim
         num1 = random.randint(10, 20)
         num2 = random.randint(1, 10)
         # operators = ['+','-']
-        operators = ['+','-','*','/','^']
+        operators = ['+','-','*','%','^']
         operator = random.choice(operators)
         
         print(f"Soal {num1} {operator} {num2} ? ")
@@ -104,27 +108,38 @@ def mechanic_game(player_hp, monster_hp, damage_range, monster_damage_range, tim
             correct_answer = num1 - num2
         elif operator == '*':
             correct_answer = num1 * num2
-        elif operator == '/':
-            correct_answer = num1 / num2
+        elif operator == '%':
+            correct_answer = num1 % num2
         elif operator == '^':
             correct_answer = num1 ** num2
             
         if answer == correct_answer and elapsed_time <= time_limit:
+            combo += 1
             if elapsed_time <= 2:
                 damage = random.randint(damage_range[0], damage_range[1]) * 2
+                print(f"Combo {combo}")
                 print(f"Correct! You deal CRITICAL HIT {damage} damage to the Monster.")
                 print(f"Time taken: {elapsed_time:.2f} seconds")
             else:
                 damage = random.randint(damage_range[0], damage_range[1])
+                print(f"Combo {combo}")
                 print(f"Correct! You deal {damage} damage to the Monster.")
                 print(f"Time taken: {elapsed_time:.2f} seconds")
-            monster_hp -= damage
+            if combo >= 2:
+                combo_damage = damage * 2
+                print(f"Combo {combo} - Bonus Damage {combo_damage}")
+                
+            monster_hp -= damage + combo_damage
 
-        else:
+        else: 
+            combo = 0
             damage = random.randint(monster_damage_range[0], monster_damage_range[1])
             player_hp -= damage
+            print(f"Combo Reset")
             print(f"Wrong! The Monster deals {damage} damage to you.")
             print(f"Time taken: {elapsed_time:.2f} seconds")
+        
+        
         
     if player_hp <= 0:
         print(f"You Lose! Monster's remaining HP is {monster_hp}")
