@@ -1,5 +1,7 @@
 import random
 import time
+import json
+import os
 
 # Define char and monster hp
 
@@ -138,17 +140,68 @@ def mechanic_game(player_hp, monster_hp, damage_range, monster_damage_range, tim
             print(f"Combo Reset")
             print(f"Wrong! The Monster deals {damage} damage to you.")
             print(f"Time taken: {elapsed_time:.2f} seconds")
-        
+            
+        save_game(player_hp, monster_hp, damage_range, monster_damage_range, time_limit)    
         
         
     if player_hp <= 0:
         print(f"You Lose! Monster's remaining HP is {monster_hp}")
     else:
         print(f"You Win! Your remaining HP is {player_hp}")
-      
-def main():
-    player_hp, monster_hp, damage_range, monster_damage_range, time_limit = chara_difficulty()
-    mechanic_game(player_hp, monster_hp, damage_range, monster_damage_range, time_limit)
 
+def save_game(player_hp, monster_hp, damage_range, monster_damage_range, time_limit):
+    data = {
+        "player_hp": player_hp,
+        "monster_hp": monster_hp,
+        "damage_range": damage_range,
+        "monster_damage_range": monster_damage_range,
+        "time_limit": time_limit
+    }
+    
+    with open("savegame.json", "w") as file :
+        json.dump(data, file)
+        
+    print("Game Saved!")
+
+def load_game():
+    if not os.path.exists("savegame.json"):
+        print("No save file found!")
+        return None
+
+    with open("savegame.json", "r") as file:
+        data = json.load(file)
+
+    return (
+        data["player_hp"],
+        data["monster_hp"],
+        tuple(data["damage_range"]),
+        tuple(data["monster_damage_range"]),
+        data["time_limit"]
+    )
+
+def menu():
+    print("=== MATH BATTLE ===")
+    print("1. New Game")
+    print("2. Continue")
+
+    choice = input("Choose: ")
+
+    if choice == "1":
+        return chara_difficulty()
+    elif choice == "2":
+        data = load_game()
+        if data:
+            print("Save loaded!")
+            return data
+        else:
+            print("Starting new game...")
+            return chara_difficulty()
+
+def main():
+    data = menu()
+
+    player_hp, monster_hp, damage_range, monster_damage_range, time_limit = data
+
+    mechanic_game(player_hp, monster_hp, damage_range, monster_damage_range, time_limit)
 
 main()
