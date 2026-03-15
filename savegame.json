@@ -1,1 +1,5 @@
-{"player_hp": 46, "monster_hp": 245, "damage_range": [20, 34], "monster_damage_range": [25, 70], "time_limit": 20}
+{
+  "time_limit": 20,
+  "char_choice": 3,
+  "diff_choice": 4
+}
