@@ -52,78 +52,199 @@ class Monster:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  MATH QUESTION  (multiple-choice)
+#  MATH QUESTION  (multiple-choice, difficulty-aware, integer results)
 # ══════════════════════════════════════════════════════════════════════════════
 
 class MathQuestion:
     """
-    Membuat satu soal matematika dengan 4 pilihan jawaban (A-D).
-    Jawaban yang salah dibuat 'tipis' bedanya dari jawaban benar.
+    Membuat soal multi-operasi berdasarkan difficulty, hasil selalu bilangan bulat.
+
+    Difficulty  | Operasi                        | Jumlah operasi | Range angka
+    ------------|--------------------------------|----------------|------------
+    Easy   (1)  | + -                            | 3-4            | 10-99
+    Medium (2)  | + - *                          | 3-4            | 10-99
+    Hard   (3)  | * / ^                          | 2-3            | 10-99
+    Extreme(4)  | * / ^ %                        | 3-4            | 10-99
+
+    Strategi integer-safe:
+    - Pembagian  : generate pembagi dulu, kalikan ke akumulator agar habis dibagi
+    - Sisa bagi  : pastikan num % div != 0 agar hasilnya tidak trivial (0)
+    - Pangkat    : basis 2-9, eksponen 2-3 agar hasil tidak meledak
     """
 
-    OPERATORS = ['+', '-', '*', '%', '^']
-    LABELS    = ['A', 'B', 'C', 'D']
+    LABELS = ['A', 'B', 'C', 'D']
 
-    def __init__(self):
-        self.num1     = random.randint(10, 20)
-        self.num2     = random.randint(1, 10)
-        self.operator = random.choice(self.OPERATORS)
-        self.answer   = self._compute()
+    # Konfigurasi per difficulty: (operator_pool, min_ops, max_ops)
+    DIFF_CONFIG = {
+        1: (['+', '-'],           3, 4),
+        2: (['+', '-', '*'],      3, 4),
+        3: (['*', '/', '^'],      2, 3),
+        4: (['*', '/', '^', '%'], 3, 4),
+    }
+
+    def __init__(self, diff: int = 1):
+        self.diff = diff
+        self.expression, self.answer = self._build_expression()
         self.choices, self.correct_label = self._make_choices()
 
-    def _compute(self) -> float:
-        ops = {
-            '+': self.num1 + self.num2,
-            '-': self.num1 - self.num2,
-            '*': self.num1 * self.num2,
-            '%': self.num1 % self.num2,
-            '^': self.num1 ** self.num2,
-        }
-        return ops[self.operator]
+    # ── expression builder ────────────────────────────────────────────────────
+
+    def _rand_num(self) -> int:
+        """Angka 2-3 digit: 10-99."""
+        return random.randint(10, 99)
+
+    def _build_expression(self) -> tuple:
+        """
+        Buat ekspresi multi-operasi yang hasilnya pasti integer non-negatif.
+        Kembalikan (string_soal, jawaban_int).
+        Jika hasil terlalu besar (> 10^9), generate ulang (max 30x).
+        """
+        ops_pool, min_ops, max_ops = self.DIFF_CONFIG[self.diff]
+        n_ops = random.randint(min_ops, max_ops)
+
+        for _ in range(30):
+            operators = [random.choice(ops_pool) for _ in range(n_ops)]
+            numbers   = self._safe_numbers(operators)
+
+            result = numbers[0]
+            for i, op in enumerate(operators):
+                result = self._apply(result, op, numbers[i + 1])
+
+            # Tolak jika hasil negatif, nol, atau terlalu besar
+            if result <= 0 or result > 10_000_000:
+                continue
+
+            display_ops = {'*': '*', '/': '/', '^': '**', '+': '+', '-': '-', '%': '%'}
+            parts = [str(numbers[0])]
+            for i, op in enumerate(operators):
+                parts.append(op if op != '^' else '**')
+                parts.append(str(numbers[i + 1]))
+            return ' '.join(parts), int(result)
+
+        # Fallback: soal sederhana 2 angka jika terus gagal
+        a, b = random.randint(10, 99), random.randint(10, 99)
+        op = random.choice(['+', '-'])
+        if op == '-' and b > a:
+            a, b = b, a
+        return f"{a} {op} {b}", self._apply(a, op, b)
+
+    def _safe_numbers(self, operators: list) -> list:
+        """
+        Generate daftar angka agar setiap operasi menghasilkan integer non-negatif.
+        Evaluasi kiri ke kanan:  acc  op[i]  num[i+1]
+        """
+        acc = self._rand_num()
+        numbers = [acc]
+
+        for op in operators:
+            if op == '/':
+                # Pastikan acc cukup besar untuk dibagi
+                if acc < 2:
+                    acc = random.randint(10, 99)
+                    numbers[-1] = acc
+                divisor = random.randint(2, min(9, acc))
+                acc = acc * divisor
+                numbers[-1] = acc
+                numbers.append(divisor)
+                acc = acc // divisor
+
+            elif op == '^':
+                # Reset ke basis kecil agar tidak overflow
+                base = random.randint(2, 12)
+                exp  = random.randint(2, 3)
+                numbers[-1] = base
+                acc = base
+                numbers.append(exp)
+                acc = acc ** exp
+
+            elif op == '%':
+                # Pastikan acc >= 2 agar ada sisa yang bermakna
+                if acc < 2:
+                    acc = random.randint(10, 99)
+                    numbers[-1] = acc
+                # Pilih pembagi yang tidak habis membagi dan tidak 0
+                for _ in range(50):
+                    divisor = random.randint(2, min(9, max(2, acc - 1)))
+                    if acc % divisor != 0:
+                        break
+                else:
+                    divisor = 2
+                    acc += 1          # paksa ada sisa
+                    numbers[-1] = acc
+                numbers.append(divisor)
+                acc = acc % divisor
+
+            else:  # + atau -
+                if op == '-':
+                    max_sub = max(1, acc - 1)
+                    b = random.randint(1, min(max_sub, 99))
+                else:
+                    b = self._rand_num()
+                numbers.append(b)
+                acc = self._apply(acc, op, b)
+
+        return numbers
+
+    @staticmethod
+    def _apply(a, op: str, b) -> int:
+        if op == '+':  return a + b
+        if op == '-':  return a - b
+        if op == '*':  return a * b
+        if op == '/':  return a // b
+        if op == '^':  return a ** b
+        if op == '%':  return a % b
+
+    # ── decoy generator ───────────────────────────────────────────────────────
 
     def _make_choices(self) -> tuple:
         """
-        Buat 3 decoy yang mirip dengan jawaban benar.
-        - Untuk ^ (hasil bisa besar): decoy ±5-15% dari jawaban
-        - Untuk operator lain       : decoy ±1-5 dari jawaban
+        Buat 3 decoy yang 'tipis' bedanya:
+        - Jawaban kecil  (<= 100) : delta ±1-8
+        - Jawaban sedang (101-999): delta ±5-30
+        - Jawaban besar  (>= 1000): delta ±1-5% dari jawaban (integer)
+        Jika jawaban terlalu besar untuk float (>10^15), pakai persentase integer murni.
         """
         correct = self.answer
         decoys  = set()
 
-        attempt = 0
-        while len(decoys) < 3 and attempt < 200:
-            attempt += 1
-            if self.operator == '^':
-                delta = random.randint(1, max(1, int(abs(correct) * 0.15)))
+        for _ in range(500):
+            abs_correct = abs(correct)
+            if abs_correct <= 100:
+                delta = random.randint(1, 8)
+            elif abs_correct <= 999:
+                delta = random.randint(5, 30)
             else:
-                delta = random.randint(1, 5)
+                pct = random.randint(1, 5)
+                delta = max(1, abs_correct * pct // 100)  # integer arithmetic, no float
 
             candidate = correct + random.choice([-1, 1]) * delta
             if candidate != correct:
                 decoys.add(candidate)
+            if len(decoys) == 3:
+                break
 
-        options = list(decoys) + [correct]
+        options = list(decoys)[:3] + [correct]
         random.shuffle(options)
 
         choices = {label: val for label, val in zip(self.LABELS, options)}
         correct_label = next(k for k, v in choices.items() if v == correct)
         return choices, correct_label
 
+    # ── display / input ───────────────────────────────────────────────────────
+
     def display(self):
-        """Tampilkan soal dan pilihan."""
-        print(f"\nSoal: {self.num1} {self.operator} {self.num2} ?")
+        print(f"\nSoal: {self.expression} = ?")
         for label, val in self.choices.items():
             print(f"  {label}. {val}")
 
     def ask(self) -> tuple:
-        """Terima input pilihan (A/B/C/D) + catat waktu. Kembalikan (label, elapsed)."""
+        """Kembalikan (label_dipilih, elapsed_seconds)."""
         self.display()
         start = time.time()
         while True:
             raw = input("Your Answer (A/B/C/D) : ").strip().upper()
             if raw in self.LABELS:
-                elapsed = time.time() - start
-                return raw, elapsed
+                return raw, time.time() - start
             print("Pilihan tidak valid! Masukkan A, B, C, atau D.")
 
     def is_correct(self, label: str) -> bool:
@@ -218,12 +339,13 @@ class BattleEngine:
 
     def __init__(self, player_hp: int, monster_hp: int,
                  damage_range: tuple, monster_damage_range: tuple,
-                 time_limit: int):
+                 time_limit: int, diff: int = 1):
         self.player_hp            = player_hp
         self.monster_hp           = monster_hp
         self.damage_range         = damage_range
         self.monster_damage_range = monster_damage_range
         self.time_limit           = time_limit
+        self.diff                 = diff
         self.combo                = 0
         self.combo_damage         = 0
 
@@ -232,7 +354,7 @@ class BattleEngine:
             print("\nPlayer HP :", self.player_hp)
             print("Monster HP:", self.monster_hp)
 
-            question       = MathQuestion()
+            question       = MathQuestion(self.diff)
             label, elapsed = question.ask()
 
             if question.is_correct(label) and elapsed <= self.time_limit:
@@ -373,7 +495,8 @@ class Game:
             if c == "1":
                 player_hp, monster_hp, dmg_r, mon_dmg_r, tl = battle_data
                 print("Battle dilanjutkan!")
-                BattleEngine(player_hp, monster_hp, dmg_r, mon_dmg_r, tl).run()
+                BattleEngine(player_hp, monster_hp, dmg_r, mon_dmg_r, tl,
+                             self.diff_choice).run()
                 return
 
         char    = Character(self.char_choice)
@@ -386,6 +509,7 @@ class Game:
             char.hp, monster.hp,
             char.damage_range, monster.damage_range,
             self.time_limit,
+            self.diff_choice,
         ).run()
 
     # ── character select ──────────────────────────────────────────────────────
